@@ -46,12 +46,12 @@
 
         if (left < 0) {
             left = 0;
-        } else if (left + bounds.width > maxLeft) {
+        } else if (left > maxLeft) {
             left = maxLeft;
         }
         if (top < 0) {
             top = 0;
-        } else if (top + bounds.height > maxTop) {
+        } else if (top > maxTop) {
             top = maxTop;
         }
 
