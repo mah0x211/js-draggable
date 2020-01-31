@@ -22,6 +22,11 @@
 (function(global) {
     'use strict';
 
+    const IsTouchDevice =
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        navigator.msMaxTouchPoints > 0;
+
     function GetBoundingRect(elm) {
         let rect = elm.getBoundingClientRect();
         return {
@@ -57,45 +62,75 @@
 
         this.style.left = left + 'px';
         this.style.top = top + 'px';
+
+        if (IsTouchDevice) {
+            ev.preventDefault();
+        }
     }
 
     function onDragEnd(ev) {
-        const data = this._draggable;
-        // remove ghost image
-        data.ghost.parentNode.removeChild(data.ghost);
+        if (IsTouchDevice) {
+            ev.preventDefault();
+        } else {
+            // remove ghost image
+            const data = this._draggable;
+            data.ghost.parentNode.removeChild(data.ghost);
+        }
     }
 
     function onDragStart(ev) {
         const data = this._draggable;
-        // hide ghost image by custom image
-        this.parentNode.appendChild(data.ghost);
-        ev.dataTransfer.setDragImage(data.ghost, 0, 0);
-        // save clicked position
         const bounds = this.getBoundingClientRect();
-        data.shiftX = ev.clientX - bounds.left;
-        data.shiftY = ev.clientY - bounds.top;
+        let clientX = ev.clientX;
+        let clientY = ev.clientY;
+
+        if (IsTouchDevice) {
+            ev.preventDefault();
+            clientX = ev.changedTouches[0].clientX;
+            clientY = ev.changedTouches[0].clientY;
+        } else {
+            // hide ghost image by custom image
+            this.parentNode.appendChild(data.ghost);
+            ev.dataTransfer.setDragImage(data.ghost, 0, 0);
+        }
+
+        // save clicked position
+        data.shiftX = clientX - bounds.left;
+        data.shiftY = clientY - bounds.top;
     }
 
     // export
     global.Draggable = function(elm) {
-        const ghost = document.createElement('img');
-        ghost.width = 1;
-        ghost.height = 1;
-        ghost.style.visibility = 'hidden';
-        elm._draggable = {
-            ghost: ghost
-        };
-        elm.setAttribute('draggable', true);
-        elm.addEventListener('dragstart', onDragStart);
-        elm.addEventListener('dragend', onDragEnd);
-        elm.addEventListener('drag', onDrag);
+        elm._draggable = {};
+        if (IsTouchDevice) {
+            elm.addEventListener('touchstart', onDragStart);
+            elm.addEventListener('touchend', onDragEnd);
+            elm.addEventListener('touchmove', onDrag);
+        } else {
+            elm.setAttribute('draggable', true);
+            elm.addEventListener('dragstart', onDragStart);
+            elm.addEventListener('dragend', onDragEnd);
+            elm.addEventListener('drag', onDrag);
+            // create custom ghost image
+            const ghost = document.createElement('img');
+            ghost.width = 1;
+            ghost.height = 1;
+            ghost.style.visibility = 'hidden';
+            elm._draggable.ghost = ghost;
+        }
     };
 
     global.Undraggable = function(elm) {
         delete elm._draggable;
-        elm.removeAttribute('draggable');
-        elm.removeEventListener('dragstart', onDragStart);
-        elm.removeEventListener('dragend', onDragEnd);
-        elm.removeEventListener('drag', onDrag);
+        if (IsTouchDevice) {
+            elm.removeEventListener('touchstart', onDragStart);
+            elm.removeEventListener('touchend', onDragEnd);
+            elm.removeEventListener('touchmove', onDrag);
+        } else {
+            elm.removeAttribute('draggable');
+            elm.removeEventListener('dragstart', onDragStart);
+            elm.removeEventListener('dragend', onDragEnd);
+            elm.removeEventListener('drag', onDrag);
+        }
     };
 })(this);
