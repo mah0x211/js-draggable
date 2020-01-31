@@ -27,6 +27,8 @@
         navigator.maxTouchPoints > 0 ||
         navigator.msMaxTouchPoints > 0;
 
+    function Noop() {}
+
     function GetBoundingRect(elm) {
         let rect = elm.getBoundingClientRect();
         return {
@@ -66,15 +68,28 @@
         if (IsTouchDevice) {
             ev.preventDefault();
         }
+
+        try {
+            data.callback.call(this, ev);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     function onDragEnd(ev) {
+        const data = this._draggable;
+
         if (IsTouchDevice) {
             ev.preventDefault();
         } else {
             // remove ghost image
-            const data = this._draggable;
             data.ghost.parentNode.removeChild(data.ghost);
+        }
+
+        try {
+            data.callback.call(this, ev);
+        } catch (e) {
+            console.error(e);
         }
     }
 
@@ -97,11 +112,25 @@
         // save clicked position
         data.shiftX = clientX - bounds.left;
         data.shiftY = clientY - bounds.top;
+
+        try {
+            data.callback.call(this, ev);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     // export
-    global.Draggable = function(elm) {
-        elm._draggable = {};
+    global.Draggable = function Draggable(elm, callback) {
+        callback = callback || Noop;
+        if (typeof callback !== 'function') {
+            throw new TypeError('callback is not function');
+        }
+
+        elm._draggable = {
+            callback: callback
+        };
+
         if (IsTouchDevice) {
             elm.addEventListener('touchstart', onDragStart);
             elm.addEventListener('touchend', onDragEnd);
@@ -115,12 +144,13 @@
             const ghost = document.createElement('img');
             ghost.width = 1;
             ghost.height = 1;
+            ghost.style.position = 'absolute';
             ghost.style.visibility = 'hidden';
             elm._draggable.ghost = ghost;
         }
     };
 
-    global.Undraggable = function(elm) {
+    global.Undraggable = function Undraggable(elm) {
         delete elm._draggable;
         if (IsTouchDevice) {
             elm.removeEventListener('touchstart', onDragStart);
