@@ -44,24 +44,29 @@
     function onDrag(ev) {
         const data = this._draggable;
         const parent = this.parentNode;
+        const bounds = GetBoundingRect(this);
         let left = ev.pageX - parent.offsetLeft - data.shiftX;
         let top = ev.pageY - parent.offsetTop - data.shiftY;
-        const bounds = GetBoundingRect(this);
-        const parentBounds = GetBoundingRect(parent);
-        const maxLeft = parentBounds.width - bounds.width;
-        const maxTop = parentBounds.height - bounds.height;
+
+        if (!data.overflow) {
+            const parentBounds = GetBoundingRect(parent);
+            const maxLeft = parentBounds.width - bounds.width;
+            const maxTop = parentBounds.height - bounds.height;
+            if (left > maxLeft) {
+                left = maxLeft;
+            }
+            if (top > maxTop) {
+                top = maxTop;
+            }
+        }
 
         if (left < 0) {
             left = 0;
-        } else if (left > maxLeft) {
-            left = maxLeft;
         }
         if (top < 0) {
             top = 0;
-        } else if (top > maxTop) {
-            top = maxTop;
         }
-
+        // update position
         this.style.left = left + 'px';
         this.style.top = top + 'px';
 
@@ -79,6 +84,9 @@
     function onDragEnd(ev) {
         const data = this._draggable;
 
+        // remove region
+        data.region.parentNode.removeChild(data.region);
+        data.region = null;
         if (IsTouchDevice) {
             ev.preventDefault();
         } else {
@@ -95,14 +103,13 @@
 
     function onDragStart(ev) {
         const data = this._draggable;
-        const bounds = this.getBoundingClientRect();
-        let clientX = ev.clientX;
-        let clientY = ev.clientY;
+        let pageX = ev.pageX;
+        let pageY = ev.pageY;
 
         if (IsTouchDevice) {
             ev.preventDefault();
-            clientX = ev.changedTouches[0].clientX;
-            clientY = ev.changedTouches[0].clientY;
+            pageX = ev.changedTouches[0].pageX;
+            pageY = ev.changedTouches[0].pageY;
         } else {
             // hide ghost image by custom image
             this.parentNode.appendChild(data.ghost);
@@ -110,8 +117,18 @@
         }
 
         // save clicked position
-        data.shiftX = clientX - bounds.left;
-        data.shiftY = clientY - bounds.top;
+        const parent = this.parentNode;
+        const bounds = this.getBoundingClientRect();
+        data.shiftX = pageX - bounds.left - parent.scrollLeft;
+        data.shiftY = pageY - bounds.top - parent.scrollTop;
+
+        // create region rect
+        const parentBounds = GetBoundingRect(parent);
+        const div = document.createElement('div');
+        div.style.width = parentBounds.width + parent.scrollLeft + 'px';
+        div.style.height = parentBounds.height + parent.scrollTop + 'px';
+        data.region = div;
+        parent.appendChild(div);
 
         try {
             data.callback.call(this, ev);
@@ -121,22 +138,35 @@
     }
 
     // export
-    global.Draggable = function Draggable(elm, callback) {
+    /**
+     * DraggableCb
+     * @callback DraggableCb
+     * @param {DragEvent} ev
+     */
+
+    /**
+     * Make the element draggable
+     * @param {HTMLElement} elm becomes draggable
+     * @param {Boolean} overflow elm can move outside the padding box if true
+     * @param {DraggableCb} callback called after changing the position of elm
+     * @throws {TypeError} throws TypeError if callback is not function
+     */
+    global.Draggable = function Draggable(elm, overflow, callback) {
         callback = callback || Noop;
         if (typeof callback !== 'function') {
             throw new TypeError('callback is not function');
         }
 
         elm._draggable = {
-            callback: callback
+            callback: callback,
+            overflow: overflow === true
         };
-
+        elm.setAttribute('draggable', true);
         if (IsTouchDevice) {
             elm.addEventListener('touchstart', onDragStart);
             elm.addEventListener('touchend', onDragEnd);
             elm.addEventListener('touchmove', onDrag);
         } else {
-            elm.setAttribute('draggable', true);
             elm.addEventListener('dragstart', onDragStart);
             elm.addEventListener('dragend', onDragEnd);
             elm.addEventListener('drag', onDrag);
@@ -150,14 +180,18 @@
         }
     };
 
+    /**
+     * Make the element undraggable
+     * @param {HTMLElement} elm becomes draggable
+     */
     global.Undraggable = function Undraggable(elm) {
         delete elm._draggable;
+        elm.removeAttribute('draggable');
         if (IsTouchDevice) {
             elm.removeEventListener('touchstart', onDragStart);
             elm.removeEventListener('touchend', onDragEnd);
             elm.removeEventListener('touchmove', onDrag);
         } else {
-            elm.removeAttribute('draggable');
             elm.removeEventListener('dragstart', onDragStart);
             elm.removeEventListener('dragend', onDragEnd);
             elm.removeEventListener('drag', onDrag);
