@@ -41,15 +41,14 @@
         };
     }
 
-    function onDrag(ev) {
-        const data = this._draggable;
-        const parent = this.parentNode;
-        const bounds = GetBoundingRect(this);
-        let left = ev.pageX - parent.offsetLeft - data.shiftX;
-        let top = ev.pageY - parent.offsetTop - data.shiftY;
+    function invoke(ctx, ev) {
+        const target = ctx.target;
+        let left = ctx.srcX + (ev.screenX - ctx.startX);
+        let top = ctx.srcY + (ev.screenY - ctx.startY);
 
-        if (!data.overflow) {
-            const parentBounds = GetBoundingRect(parent);
+        if (!ctx.overflow) {
+            const bounds = GetBoundingRect(target);
+            const parentBounds = GetBoundingRect(target.parentNode);
             const maxLeft = parentBounds.width - bounds.width;
             const maxTop = parentBounds.height - bounds.height;
             if (left > maxLeft) {
@@ -66,62 +65,81 @@
         if (top < 0) {
             top = 0;
         }
-        // update position
-        this.style.left = left + 'px';
-        this.style.top = top + 'px';
 
+        // update position
+        target.style.left = left + 'px';
+        target.style.top = top + 'px';
+        ctx.callback.call(target, ev);
+    }
+
+    const REGION_ID = 'DRAGGABLE_REGION';
+
+    function onDrag(ev) {
         if (IsTouchDevice) {
             ev.preventDefault();
+            ev = ev.changedTouches[0];
         }
 
-        data.callback.call(this, ev);
+        let div = this;
+        if (div === document) {
+            div = document.getElementById(REGION_ID);
+        }
+        invoke(div.ctx, ev);
     }
 
     function onDragEnd(ev) {
-        const data = this._draggable;
-
-        // remove region
-        data.region.parentNode.removeChild(data.region);
-        data.region = null;
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener('blur', onDragEnd);
         if (IsTouchDevice) {
             ev.preventDefault();
-        } else {
-            // remove ghost image
-            data.ghost.parentNode.removeChild(data.ghost);
+            ev = ev.changedTouches[0];
         }
 
-        data.callback.call(this, ev);
+        // remove region
+        let div = this;
+        if (div === document) {
+            div = document.getElementById(REGION_ID);
+        }
+        div.parentNode.removeChild(div);
+        invoke(div.ctx, ev);
     }
 
     function onDragStart(ev) {
-        const data = this._draggable;
-        let pageX = ev.pageX;
-        let pageY = ev.pageY;
-
+        ev.preventDefault();
         if (IsTouchDevice) {
-            ev.preventDefault();
-            pageX = ev.changedTouches[0].pageX;
-            pageY = ev.changedTouches[0].pageY;
-        } else {
-            // hide ghost image by custom image
-            this.parentNode.appendChild(data.ghost);
-            ev.dataTransfer.setDragImage(data.ghost, 0, 0);
+            ev = ev.changedTouches[0];
         }
 
-        // save clicked position
-        const parent = this.parentNode;
-        const bounds = this.getBoundingClientRect();
-        data.shiftX = pageX - bounds.left - parent.scrollLeft;
-        data.shiftY = pageY - bounds.top - parent.scrollTop;
-
         // create region rect
+        const parent = this.parentNode;
         const div = document.createElement('div');
+        div.id = REGION_ID;
+        div.style.position = 'absolute';
+        div.style.top = '0';
+        div.style.left = '0';
         div.style.width = parent.scrollWidth + 'px';
         div.style.height = parent.scrollHeight + 'px';
-        data.region = div;
+        div.addEventListener('mousemove', onDrag);
+        div.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('blur', onDragEnd);
+        // save clicked position
+        const bounds = this.getBoundingClientRect();
+        const data = this._draggable;
+        div.ctx = {
+            target: this,
+            callback: data.callback,
+            overflow: data.overflow,
+            startX: ev.screenX + parent.offsetLeft - parent.scrollLeft,
+            startY: ev.screenY + parent.offsetTop - parent.scrollTop,
+            srcX: bounds.left,
+            srcY: bounds.top
+        };
         parent.appendChild(div);
 
-        data.callback.call(this, ev);
+        invoke(div.ctx, ev);
     }
 
     // export
@@ -151,19 +169,8 @@
         elm.setAttribute('draggable', true);
         if (IsTouchDevice) {
             elm.addEventListener('touchstart', onDragStart);
-            elm.addEventListener('touchend', onDragEnd);
-            elm.addEventListener('touchmove', onDrag);
         } else {
             elm.addEventListener('dragstart', onDragStart);
-            elm.addEventListener('dragend', onDragEnd);
-            elm.addEventListener('drag', onDrag);
-            // create custom ghost image
-            const ghost = document.createElement('img');
-            ghost.width = 1;
-            ghost.height = 1;
-            ghost.style.position = 'absolute';
-            ghost.style.visibility = 'hidden';
-            elm._draggable.ghost = ghost;
         }
     };
 
@@ -176,12 +183,8 @@
         elm.removeAttribute('draggable');
         if (IsTouchDevice) {
             elm.removeEventListener('touchstart', onDragStart);
-            elm.removeEventListener('touchend', onDragEnd);
-            elm.removeEventListener('touchmove', onDrag);
         } else {
             elm.removeEventListener('dragstart', onDragStart);
-            elm.removeEventListener('dragend', onDragEnd);
-            elm.removeEventListener('drag', onDrag);
         }
     };
 })(this);
