@@ -41,11 +41,12 @@
         };
     }
 
-    function invoke(ctx, ev) {
+    function invoke(ctx, ev, typ) {
         const target = ctx.target;
         let left = ctx.srcX + (ev.screenX - ctx.startX);
         let top = ctx.srcY + (ev.screenY - ctx.startY);
 
+        // prevent overflow
         if (!ctx.overflow) {
             const bounds = GetBoundingRect(target);
             const parentBounds = GetBoundingRect(target.parentNode);
@@ -59,6 +60,7 @@
             }
         }
 
+        // prevent underflow
         if (left < 0) {
             left = 0;
         }
@@ -67,9 +69,7 @@
         }
 
         // update position
-        target.style.left = left + 'px';
-        target.style.top = top + 'px';
-        ctx.callback.call(target, ev);
+        ctx.callback.call(target, ev, typ, left, top);
     }
 
     const REGION_ID = 'DRAGGABLE_REGION';
@@ -84,7 +84,7 @@
         if (div === document) {
             div = document.getElementById(REGION_ID);
         }
-        invoke(div.ctx, ev);
+        invoke(div.ctx, ev, 'move');
     }
 
     function onDragEnd(ev) {
@@ -102,7 +102,7 @@
             div = document.getElementById(REGION_ID);
         }
         div.parentNode.removeChild(div);
-        invoke(div.ctx, ev);
+        invoke(div.ctx, ev, 'end');
     }
 
     function onDragStart(ev) {
@@ -139,7 +139,7 @@
         };
         parent.appendChild(div);
 
-        invoke(div.ctx, ev);
+        invoke(div.ctx, ev, 'start');
     }
 
     // export
@@ -147,13 +147,16 @@
      * DraggableCb
      * @callback DraggableCb
      * @param {DragEvent} ev
+     * @param {String} type "start", "move", or "stop"
+     * @param {Number} left position in the parent node
+     * @param {Number} top position in the parent node
      */
 
     /**
      * Make the element draggable
      * @param {HTMLElement} elm becomes draggable
      * @param {Boolean} overflow elm can move outside the padding box if true
-     * @param {DraggableCb} callback called after changing the position of elm
+     * @param {DraggableCb} callback called after calculating the position of elm
      * @throws {TypeError} throws TypeError if callback is not function
      */
     global.Draggable = function Draggable(elm, overflow, callback) {
