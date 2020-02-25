@@ -123,10 +123,9 @@
         data.shiftY = pageY - bounds.top - parent.scrollTop;
 
         // create region rect
-        const parentBounds = GetBoundingRect(parent);
         const div = document.createElement('div');
-        div.style.width = parentBounds.width + parent.scrollLeft + 'px';
-        div.style.height = parentBounds.height + parent.scrollTop + 'px';
+        div.style.width = parent.scrollWidth + 'px';
+        div.style.height = parent.scrollHeight + 'px';
         data.region = div;
         parent.appendChild(div);
 
