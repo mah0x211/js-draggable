@@ -107,6 +107,7 @@
 
     function onDragStart(ev) {
         ev.preventDefault();
+        ev.stopPropagation();
         if (IsTouchDevice) {
             ev = ev.changedTouches[0];
         }
