@@ -74,11 +74,7 @@
             ev.preventDefault();
         }
 
-        try {
-            data.callback.call(this, ev);
-        } catch (e) {
-            console.error(e);
-        }
+        data.callback.call(this, ev);
     }
 
     function onDragEnd(ev) {
@@ -94,11 +90,7 @@
             data.ghost.parentNode.removeChild(data.ghost);
         }
 
-        try {
-            data.callback.call(this, ev);
-        } catch (e) {
-            console.error(e);
-        }
+        data.callback.call(this, ev);
     }
 
     function onDragStart(ev) {
@@ -129,11 +121,7 @@
         data.region = div;
         parent.appendChild(div);
 
-        try {
-            data.callback.call(this, ev);
-        } catch (e) {
-            console.error(e);
-        }
+        data.callback.call(this, ev);
     }
 
     // export
