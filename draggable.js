@@ -27,8 +27,6 @@
         navigator.maxTouchPoints > 0 ||
         navigator.msMaxTouchPoints > 0;
 
-    function Noop() {}
-
     function invoke(ctx, ev, typ) {
         const target = ctx.target;
         const parent = target.parentElement;
@@ -122,11 +120,12 @@
         document.addEventListener('mouseup', onDragEnd);
         document.addEventListener('blur', onDragEnd);
         // save clicked position
-        const bounds = this.getBoundingClientRect();
         const data = this._draggable;
+        const target = data.confirmCb(this);
+        const bounds = target.getBoundingClientRect();
         div.ctx = {
-            target: this,
-            callback: data.callback,
+            target: target,
+            callback: data.dragCb,
             overflow: data.overflow,
             startX: ev.screenX,
             startY: ev.screenY,
@@ -139,9 +138,14 @@
     }
 
     // export
+    function DefalutDragTargetCb() {}
+    function DefaultConfirmDragTargetCb(target) {
+        return target;
+    }
+
     /**
-     * DraggableCb
-     * @callback DraggableCb
+     * DragTargetCb
+     * @callback DragTargetCb
      * @param {Number} x position in the parent element
      * @param {Number} y position in the parent element
      * @param {Number} dx delta position in the parent element
@@ -151,20 +155,32 @@
      */
 
     /**
+     * ConfirmDragTargetCb
+     * @callback ConfirmDragTargetCb
+     * @param {HTMLElement} target element
+     * @return {HTMLElement} that will be target element
+     */
+
+    /**
      * Make the element draggable
      * @param {HTMLElement} elm becomes draggable
      * @param {Boolean} overflow elm can move outside the padding box if true
-     * @param {DraggableCb} callback called after calculating the position of elm
-     * @throws {TypeError} throws TypeError if callback is not function
+     * @param {DragTargetCb} dragCb called after calculating the position of target elm
+     * @param {ConfirmDragTargetCb} confirmCb called to confirm the target elm
+     * @throws {TypeError} throws TypeError if invalid callback arguments are passed
      */
-    global.Draggable = function Draggable(elm, overflow, callback) {
-        callback = callback || Noop;
-        if (typeof callback !== 'function') {
-            throw new TypeError('callback is not function');
+    global.Draggable = function Draggable(elm, overflow, dragCb, confirmCb) {
+        dragCb = dragCb || DefalutDragTargetCb;
+        confirmCb = confirmCb || DefaultConfirmDragTargetCb;
+        if (typeof dragCb !== 'function') {
+            throw new TypeError('dragCb is not function');
+        } else if (typeof confirmCb !== 'function') {
+            throw new TypeError('dragCb is not function');
         }
 
         elm._draggable = {
-            callback: callback,
+            dragCb: dragCb,
+            confirmCb: confirmCb,
             overflow: overflow === true
         };
         elm.setAttribute('draggable', true);
