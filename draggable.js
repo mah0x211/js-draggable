@@ -29,47 +29,42 @@
 
     function Noop() {}
 
-    function GetBoundingRect(elm) {
-        let rect = elm.getBoundingClientRect();
-        return {
-            top: rect.top,
-            bottom: rect.bottom,
-            left: rect.left,
-            right: rect.right,
-            width: rect.right - rect.left,
-            height: rect.bottom - rect.top
-        };
-    }
-
     function invoke(ctx, ev, typ) {
         const target = ctx.target;
-        let left = ctx.srcX + (ev.screenX - ctx.startX);
-        let top = ctx.srcY + (ev.screenY - ctx.startY);
+        const parent = target.parentElement;
+        let dx = ev.screenX - ctx.startX;
+        let dy = ev.screenY - ctx.startY;
+        let x = ctx.srcX + dx;
+        let y = ctx.srcY + dy;
 
         // prevent overflow
         if (!ctx.overflow) {
-            const bounds = GetBoundingRect(target);
-            const parentBounds = GetBoundingRect(target.parentNode);
-            const maxLeft = parentBounds.width - bounds.width;
-            const maxTop = parentBounds.height - bounds.height;
-            if (left > maxLeft) {
-                left = maxLeft;
+            const bounds = target.getBoundingClientRect();
+            const parentBounds = parent.getBoundingClientRect();
+            const maxX = parentBounds.width - bounds.width;
+            const maxY = parentBounds.height - bounds.height;
+            if (x > maxX) {
+                dx -= x - maxX;
+                x = maxX;
             }
-            if (top > maxTop) {
-                top = maxTop;
+            if (y > maxY) {
+                dy -= y - maxY;
+                y = maxY;
             }
         }
 
         // prevent underflow
-        if (left < 0) {
-            left = 0;
+        if (x < 0) {
+            dx -= x;
+            x = 0;
         }
-        if (top < 0) {
-            top = 0;
+        if (y < 0) {
+            dy -= y;
+            y = 0;
         }
 
         // update position
-        ctx.callback.call(target, ev, typ, left, top);
+        ctx.callback.call(target, x, y, dx, dy, typ, ev);
     }
 
     const REGION_ID = 'DRAGGABLE_REGION';
@@ -101,7 +96,7 @@
         if (div === document) {
             div = document.getElementById(REGION_ID);
         }
-        div.parentNode.removeChild(div);
+        div.parentElement.removeChild(div);
         invoke(div.ctx, ev, 'end');
     }
 
@@ -113,7 +108,7 @@
         }
 
         // create region rect
-        const parent = this.parentNode;
+        const parent = this.parentElement;
         const div = document.createElement('div');
         div.id = REGION_ID;
         div.style.position = 'absolute';
@@ -133,10 +128,10 @@
             target: this,
             callback: data.callback,
             overflow: data.overflow,
-            startX: ev.screenX + parent.offsetLeft - parent.scrollLeft,
-            startY: ev.screenY + parent.offsetTop - parent.scrollTop,
-            srcX: bounds.left,
-            srcY: bounds.top
+            startX: ev.screenX,
+            startY: ev.screenY,
+            srcX: bounds.left - parent.offsetLeft + parent.scrollLeft,
+            srcY: bounds.top - parent.offsetTop + parent.scrollTop
         };
         parent.appendChild(div);
 
@@ -147,10 +142,12 @@
     /**
      * DraggableCb
      * @callback DraggableCb
-     * @param {DragEvent} ev
+     * @param {Number} x position in the parent element
+     * @param {Number} y position in the parent element
+     * @param {Number} dx delta position in the parent element
+     * @param {Number} dy delta position in the parent element
      * @param {String} type "start", "move", or "stop"
-     * @param {Number} left position in the parent node
-     * @param {Number} top position in the parent node
+     * @param {DragEvent} ev
      */
 
     /**
