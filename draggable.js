@@ -137,10 +137,25 @@
         invoke(div.ctx, ev, 'start');
     }
 
-    // export
     function DefalutDragTargetCb() {}
     function DefaultConfirmDragTargetCb(target) {
         return target;
+    }
+
+    /**
+     * Set draggable attribute
+     * @param {HTMLElement} elm
+     */
+    function EnableDraggable(elm) {
+        elm.setAttribute('draggable', true);
+    }
+
+    /**
+     * Remove draggable attribute
+     * @param {HTMLElement} elm
+     */
+    function DisableDraggable(elm) {
+        elm.removeAttribute('draggable');
     }
 
     /**
@@ -169,7 +184,7 @@
      * @param {ConfirmDragTargetCb} confirmCb called to confirm the target elm
      * @throws {TypeError} throws TypeError if invalid callback arguments are passed
      */
-    global.Draggable = function Draggable(elm, overflow, dragCb, confirmCb) {
+    function Draggable(elm, overflow, dragCb, confirmCb) {
         dragCb = dragCb || DefalutDragTargetCb;
         confirmCb = confirmCb || DefaultConfirmDragTargetCb;
         if (typeof dragCb !== 'function') {
@@ -183,25 +198,31 @@
             confirmCb: confirmCb,
             overflow: overflow === true
         };
-        elm.setAttribute('draggable', true);
         if (IsTouchDevice) {
             elm.addEventListener('touchstart', onDragStart);
         } else {
             elm.addEventListener('dragstart', onDragStart);
         }
-    };
+        EnableDraggable(elm);
+    }
 
     /**
      * Make the element undraggable
      * @param {HTMLElement} elm becomes draggable
      */
-    global.Undraggable = function Undraggable(elm) {
+    function Undraggable(elm) {
         delete elm._draggable;
-        elm.removeAttribute('draggable');
         if (IsTouchDevice) {
             elm.removeEventListener('touchstart', onDragStart);
         } else {
             elm.removeEventListener('dragstart', onDragStart);
         }
-    };
+        DisableDraggable(elm);
+    }
+
+    // export
+    global.Draggable = Draggable;
+    global.Undraggable = Undraggable;
+    global.EnableDraggable = EnableDraggable;
+    global.DisableDraggable = DisableDraggable;
 })(this);
