@@ -106,7 +106,9 @@
         }
 
         // create region rect
-        const parent = this.parentElement;
+        const data = this._draggable;
+        const target = data.confirmCb(this);
+        const parent = target.parentElement;
         const div = document.createElement('div');
         div.id = REGION_ID;
         div.style.position = 'absolute';
@@ -120,8 +122,6 @@
         document.addEventListener('mouseup', onDragEnd);
         document.addEventListener('blur', onDragEnd);
         // save clicked position
-        const data = this._draggable;
-        const target = data.confirmCb(this);
         const bounds = target.getBoundingClientRect();
         div.ctx = {
             target: target,
