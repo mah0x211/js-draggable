@@ -129,8 +129,8 @@
             overflow: data.overflow,
             startX: ev.screenX,
             startY: ev.screenY,
-            srcX: bounds.left - parent.offsetLeft + parent.scrollLeft,
-            srcY: bounds.top - parent.offsetTop + parent.scrollTop
+            srcX: target.offsetLeft,
+            srcY: target.offsetTop
         };
         parent.appendChild(div);
 
