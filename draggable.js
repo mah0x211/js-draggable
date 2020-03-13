@@ -30,10 +30,22 @@
     function invoke(ctx, ev, typ) {
         const target = ctx.target;
         const parent = target.parentElement;
-        let dx = ev.screenX - ctx.startX;
-        let dy = ev.screenY - ctx.startY;
-        let x = ctx.srcX + dx;
-        let y = ctx.srcY + dy;
+        const offx = parent.scrollLeft - ctx.scrollLeft;
+        const offy = parent.scrollTop - ctx.scrollTop;
+        let dx = ev.screenX - ctx.screenX + offx;
+        let dy = ev.screenY - ctx.screenY + offy;
+        let x = ctx.x + dx;
+        let y = ctx.y + dy;
+
+        // prevent underflow
+        if (x < 0) {
+            dx -= x;
+            x = 0;
+        }
+        if (y < 0) {
+            dy -= y;
+            y = 0;
+        }
 
         // prevent overflow
         if (!ctx.overflow) {
@@ -49,16 +61,6 @@
                 dy -= y - maxY;
                 y = maxY;
             }
-        }
-
-        // prevent underflow
-        if (x < 0) {
-            dx -= x;
-            x = 0;
-        }
-        if (y < 0) {
-            dy -= y;
-            y = 0;
         }
 
         // update position
@@ -122,15 +124,16 @@
         document.addEventListener('mouseup', onDragEnd);
         document.addEventListener('blur', onDragEnd);
         // save clicked position
-        const bounds = target.getBoundingClientRect();
         div.ctx = {
             target: target,
             callback: data.dragCb,
             overflow: data.overflow,
-            startX: ev.screenX,
-            startY: ev.screenY,
-            srcX: target.offsetLeft,
-            srcY: target.offsetTop
+            x: target.offsetLeft,
+            y: target.offsetTop,
+            screenX: ev.screenX,
+            screenY: ev.screenY,
+            scrollLeft: parent.scrollLeft,
+            scrollTop: parent.scrollTop
         };
         parent.appendChild(div);
 
