@@ -22,11 +22,6 @@
 (function(global) {
     'use strict';
 
-    const IsTouchDevice =
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0 ||
-        navigator.msMaxTouchPoints > 0;
-
     function invoke(ctx, ev, typ) {
         const target = ctx.target;
         const parent = target.parentElement;
@@ -70,10 +65,7 @@
     const REGION_ID = 'DRAGGABLE_REGION';
 
     function onDrag(ev) {
-        if (IsTouchDevice) {
-            ev.preventDefault();
-            ev = ev.changedTouches[0];
-        }
+        ev.preventDefault();
 
         let div = this;
         if (div === document) {
@@ -86,10 +78,7 @@
         document.removeEventListener('mousemove', onDrag);
         document.removeEventListener('mouseup', onDragEnd);
         document.removeEventListener('blur', onDragEnd);
-        if (IsTouchDevice) {
-            ev.preventDefault();
-            ev = ev.changedTouches[0];
-        }
+        ev.preventDefault();
 
         // remove region
         let div = this;
@@ -103,9 +92,6 @@
     function onDragStart(ev) {
         ev.preventDefault();
         ev.stopPropagation();
-        if (IsTouchDevice) {
-            ev = ev.changedTouches[0];
-        }
 
         // create region rect
         const data = this._draggable;
@@ -143,22 +129,6 @@
     function DefalutDragTargetCb() {}
     function DefaultConfirmDragTargetCb(target) {
         return target;
-    }
-
-    /**
-     * Set draggable attribute
-     * @param {HTMLElement} elm
-     */
-    function EnableDraggable(elm) {
-        elm.setAttribute('draggable', true);
-    }
-
-    /**
-     * Remove draggable attribute
-     * @param {HTMLElement} elm
-     */
-    function DisableDraggable(elm) {
-        elm.removeAttribute('draggable');
     }
 
     /**
@@ -201,12 +171,7 @@
             confirmCb: confirmCb,
             overflow: overflow === true
         };
-        if (IsTouchDevice) {
-            elm.addEventListener('touchstart', onDragStart);
-        } else {
-            elm.addEventListener('dragstart', onDragStart);
-        }
-        EnableDraggable(elm);
+        elm.addEventListener('mousedown', onDragStart);
     }
 
     /**
@@ -215,17 +180,10 @@
      */
     function Undraggable(elm) {
         delete elm._draggable;
-        if (IsTouchDevice) {
-            elm.removeEventListener('touchstart', onDragStart);
-        } else {
-            elm.removeEventListener('dragstart', onDragStart);
-        }
-        DisableDraggable(elm);
+        elm.removeEventListener('mousedown', onDragStart);
     }
 
     // export
     global.Draggable = Draggable;
     global.Undraggable = Undraggable;
-    global.EnableDraggable = EnableDraggable;
-    global.DisableDraggable = DisableDraggable;
 })(this);
