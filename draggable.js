@@ -59,7 +59,7 @@
         }
 
         // update position
-        ctx.callback.call(target, x, y, dx, dy, typ, ev);
+        ctx.callback.call(ctx.self, target, x, y, dx, dy, typ, ev);
     }
 
     const REGION_ID = 'DRAGGABLE_REGION';
@@ -111,6 +111,7 @@
         document.addEventListener('blur', onDragEnd);
         // save clicked position
         div.ctx = {
+            self: this,
             target: target,
             callback: data.dragCb,
             overflow: data.overflow,
@@ -134,6 +135,8 @@
     /**
      * DragTargetCb
      * @callback DragTargetCb
+     * @this {Element} element that event trigger
+     * @param {Element} target element
      * @param {Number} x position in the parent element
      * @param {Number} y position in the parent element
      * @param {Number} dx delta position in the parent element
@@ -145,13 +148,13 @@
     /**
      * ConfirmDragTargetCb
      * @callback ConfirmDragTargetCb
-     * @param {HTMLElement} target element
-     * @return {HTMLElement} that will be target element
+     * @param {Element} target element
+     * @return {Element} that will be target element
      */
 
     /**
      * Make the element draggable
-     * @param {HTMLElement} elm becomes draggable
+     * @param {Element} elm becomes draggable
      * @param {Boolean} overflow elm can move outside the padding box if true
      * @param {DragTargetCb} dragCb called after calculating the position of target elm
      * @param {ConfirmDragTargetCb} confirmCb called to confirm the target elm
@@ -176,7 +179,7 @@
 
     /**
      * Make the element undraggable
-     * @param {HTMLElement} elm becomes draggable
+     * @param {HTMLElement} elm becomes undraggable
      */
     function Undraggable(elm) {
         delete elm._draggable;
