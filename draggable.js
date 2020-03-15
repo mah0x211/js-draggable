@@ -77,28 +77,34 @@
 
     function onDrag(ev) {
         ev.preventDefault();
-
+        // get region element
         let div = this;
         if (div === document) {
             div = document.getElementById(REGION_ID);
         }
+
         invoke(div.ctx, ev, 'move');
     }
 
     function onDragEnd(ev) {
         ev.preventDefault();
+        // get region element
+        let div = this;
+        if (div === document) {
+            div = document.getElementById(REGION_ID);
+        }
+
+        const self = div.ctx.self;
+        div.removeEventListener('mousemove', onDrag);
+        div.removeEventListener('mouseup', onDragEnd);
         document.removeEventListener('mousemove', onDrag);
         document.removeEventListener('mouseup', onDragEnd);
         document.removeEventListener('blur', onDragEnd);
 
         // remove region
-        const self = this.ctx.self;
-        let div = this;
-        if (div === document) {
-            div = document.getElementById(REGION_ID);
-        }
         div.parentElement.removeChild(div);
         invoke(div.ctx, ev, 'end');
+
         // remove drag context
         delete self[DraggableContext];
     }
