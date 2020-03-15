@@ -21,6 +21,7 @@
 //
 (function(global) {
     'use strict';
+    const DraggableContext = '__draggable_context__';
 
     function invoke(ctx, ev, typ) {
         const target = ctx.target;
@@ -59,7 +60,17 @@
         }
 
         // update position
-        ctx.callback.call(ctx.self, target, x, y, dx, dy, typ, ev);
+        ctx.callback.call(
+            ctx.self,
+            ctx.self[DraggableContext],
+            target,
+            x,
+            y,
+            dx,
+            dy,
+            typ,
+            ev
+        );
     }
 
     const REGION_ID = 'DRAGGABLE_REGION';
@@ -75,18 +86,21 @@
     }
 
     function onDragEnd(ev) {
+        ev.preventDefault();
         document.removeEventListener('mousemove', onDrag);
         document.removeEventListener('mouseup', onDragEnd);
         document.removeEventListener('blur', onDragEnd);
-        ev.preventDefault();
 
         // remove region
+        const self = this.ctx.self;
         let div = this;
         if (div === document) {
             div = document.getElementById(REGION_ID);
         }
         div.parentElement.removeChild(div);
         invoke(div.ctx, ev, 'end');
+        // remove drag context
+        delete self[DraggableContext];
     }
 
     function onDragStart(ev) {
@@ -109,6 +123,8 @@
         document.addEventListener('mousemove', onDrag);
         document.addEventListener('mouseup', onDragEnd);
         document.addEventListener('blur', onDragEnd);
+        // create drag context
+        this[DraggableContext] = {};
         // save clicked position
         div.ctx = {
             self: this,
@@ -136,6 +152,7 @@
      * DragTargetCb
      * @callback DragTargetCb
      * @this {Element} element that event trigger
+     * @param {Object} ctx object that exists only on dragging
      * @param {Element} target element
      * @param {Number} x position in the parent element
      * @param {Number} y position in the parent element
