@@ -184,7 +184,7 @@
      * @param {Boolean} overflow elm can move outside the padding box if true
      * @param {DragTargetCb} dragCb called after calculating the position of target elm
      * @param {ConfirmDragTargetCb} confirmCb called to confirm the target elm
-     * @throws {TypeError} throws TypeError if invalid callback arguments are passed
+     * @throws {TypeError} throws TypeError if invalid arguments are passed
      */
     function Draggable(elm, overflow, dragCb, confirmCb) {
         dragCb = dragCb || DefalutDragTargetCb;
@@ -192,7 +192,14 @@
         if (typeof dragCb !== 'function') {
             throw new TypeError('dragCb is not function');
         } else if (typeof confirmCb !== 'function') {
-            throw new TypeError('dragCb is not function');
+            throw new TypeError('confirmCb is not function');
+        } else if (elm instanceof HTMLElement) {
+            elm.addEventListener('dragstart', onDragStart);
+            elm.setAttribute('draggable', true);
+        } else if (elm instanceof SVGElement) {
+            elm.addEventListener('mousedown', onDragStart);
+        } else {
+            throw new TypeError('elm type is not HTMLElement or SVGElement');
         }
 
         elm._draggable = {
@@ -200,16 +207,23 @@
             confirmCb: confirmCb,
             overflow: overflow === true
         };
-        elm.addEventListener('mousedown', onDragStart);
     }
 
     /**
      * Make the element undraggable
      * @param {HTMLElement} elm becomes undraggable
+     * @throw {TypeError} throws TypeError if invalid arguments passed
      */
     function Undraggable(elm) {
+        if (elm instanceof HTMLElement) {
+            elm.removeEventListener('dragstart', onDragStart);
+            elm.removeAttribute('draggable');
+        } else if (elm instanceof SVGElement) {
+            elm.removeEventListener('mousedown', onDragStart);
+        } else {
+            throw new TypeError('elm type is not HTMLElement or SVGElement');
+        }
         delete elm._draggable;
-        elm.removeEventListener('mousedown', onDragStart);
     }
 
     // export
