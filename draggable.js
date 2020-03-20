@@ -142,8 +142,8 @@
             scrollLeft: parent.scrollLeft,
             scrollTop: parent.scrollTop
         };
-        parent.appendChild(div);
-
+        // insert as bottom element in z-index order
+        parent.insertBefore(div, parent.firstChild);
         invoke(div.ctx, ev, 'start');
     }
 
