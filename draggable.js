@@ -95,8 +95,6 @@
         }
 
         const self = div.ctx.self;
-        div.removeEventListener('mousemove', onDrag);
-        div.removeEventListener('mouseup', onDragEnd);
         document.removeEventListener('mousemove', onDrag);
         document.removeEventListener('mouseup', onDragEnd);
         document.removeEventListener('blur', onDragEnd);
@@ -128,8 +126,6 @@
         div.style.left = '0';
         div.style.width = parent.scrollWidth + 'px';
         div.style.height = parent.scrollHeight + 'px';
-        div.addEventListener('mousemove', onDrag);
-        div.addEventListener('mouseup', onDragEnd);
         document.addEventListener('mousemove', onDrag);
         document.addEventListener('mouseup', onDragEnd);
         document.addEventListener('blur', onDragEnd);
