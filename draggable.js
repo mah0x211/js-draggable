@@ -107,6 +107,12 @@
         delete self[DraggableUserdata];
     }
 
+    /**
+     * start dragging the 'this' element. you can call this function with the
+     * MouseEvent argument to force a drag to start.
+     * @this {Element}
+     * @param {MouseEvent} ev
+     */
     function onDragStart(ev) {
         ev.preventDefault();
         ev.stopPropagation();
@@ -225,4 +231,5 @@
     // export
     global.Draggable = Draggable;
     global.Undraggable = Undraggable;
+    global.DragStart = onDragStart;
 })(this);
